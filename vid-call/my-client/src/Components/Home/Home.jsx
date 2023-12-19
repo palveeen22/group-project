@@ -238,7 +238,7 @@ function Home({
               />
               <button>Submit</button>
             </form>
-            <p>Build with ❤️ by Piyush Sati</p>
+            <p>Build with ❤️ by Kambing Hutan</p>
           </div>
         </div>
       )}
