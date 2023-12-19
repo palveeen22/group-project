@@ -1,0 +1,101 @@
+import { Close, Send } from "@mui/icons-material";
+import React, { useEffect, useRef, useState } from "react";
+import "./Chats.css";
+import io from "socket.io-client";
+import { v4 as uuidv4 } from "uuid";
+import moment from "moment";
+
+function Chats({
+  chatsHandler,
+  addStyle,
+  userID,
+  myID,
+  notifyHandler,
+  displayName,
+}) {
+  const [chats, setChats] = useState([]);
+  const [msg, setMsg] = useState("");
+  const socket = useRef();
+  const chatsContainer = useRef();
+
+  const chatHandler = (e) => {
+    e.preventDefault();
+    const new_msg = {
+      id: uuidv4(),
+      name: displayName,
+      msg: msg,
+      time: moment().format("LLL"),
+    };
+    //send msg
+    socket.current.emit("chat-message", new_msg, userID);
+    setChats((chats) => [...chats, new_msg]);
+    setMsg("");
+    //scroll to bottom of chats
+    chatsContainer.current.scrollTo(
+      0,
+      chatsContainer.current.scrollHeight - chatsContainer.current.clientHeight
+    );
+  };
+
+  useEffect(() => {
+    socket.current = io(`${process.env.REACT_APP_SERVER_URL}/chats`);
+    //socket.current = io("https://localhost:9000/chats");
+    socket.current.on("connect", () => {
+      socket.current.emit("join-chat", myID);
+      //received new chat messages
+      socket.current.on("chat-msg", (msg) => {
+        setChats((chats) => [...chats, msg]);
+        notifyHandler();
+        chatsContainer.current.scrollTo(
+          0,
+          chatsContainer.current.scrollHeight -
+            chatsContainer.current.clientHeight
+        );
+      });
+    });
+
+    chatsContainer.current.scrollTo(
+      0,
+      chatsContainer.current.scrollHeight - chatsContainer.current.clientHeight
+    );
+
+    const Socket = socket.current;
+    return () => {
+      Socket.removeAllListeners();
+    };
+  }, [myID, notifyHandler]);
+
+  return (
+    <div className="chats__container" style={addStyle}>
+      <div className="chats__top">
+        Chats
+        <Close onClick={chatsHandler} className="chats__close" />
+      </div>
+      <div className="chats" ref={chatsContainer}>
+        {chats.map((msg) => (
+          <div className="chats__message" key={msg.id}>
+            <div className="chats__username">{msg.name}</div>
+            {msg.msg}
+            <div className="chats__time">{msg.time}</div>
+          </div>
+        ))}
+      </div>
+      <div className="chats__bottom">
+        <form onSubmit={chatHandler}>
+          <input
+            type="text"
+            placeholder="Type a message"
+            value={msg}
+            required
+            onChange={(e) => setMsg(e.target.value)}
+          />
+          <button type="submit" className="chat__submit">
+            <Send />
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default Chats;
