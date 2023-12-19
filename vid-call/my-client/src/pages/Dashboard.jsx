@@ -31,8 +31,7 @@ export default function Dashboard() {
       {
         host: "localhost",
         port: 5173,
-        path: "/",
-        secure: true,
+        path: "/myapp",
       }
     )
   );
